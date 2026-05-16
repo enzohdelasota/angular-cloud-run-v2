@@ -1,7 +1,6 @@
 pipeline {
-    agent {
-        docker { image 'google/cloud-sdk:stable' }
-    }
+    agent any 
+
     environment {
         GCP_PROJECT_ID         = "sanbox-aldo-prod"
         GCP_REGION             = "us-central1"
@@ -21,6 +20,12 @@ pipeline {
         }
 
         stage('GCP & Docker Auth') {
+            agent {
+                docker { 
+                    image 'google/cloud-sdk:stable'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
             steps {
                 script {
                     sh "gcloud config set project ${env.GCP_PROJECT_ID}"
@@ -30,6 +35,7 @@ pipeline {
         }
 
         stage('Build and Push Image') {
+            agent any
             steps {
                 sh """
                 docker build -t ${env.IMAGE_TAG} .
@@ -39,11 +45,12 @@ pipeline {
         }
 
         stage('Deploy to Cloud Run') {
+            agent { docker { image 'google/cloud-sdk:stable' } }
             steps {
                 sh """
                 gcloud run deploy ${env.CLOUD_RUN_SERVICE_NAME}-${env.ENVIRONMENT_NAME} \
                     --image ${env.IMAGE_TAG} \
-                    --region ${env.GCP_REGION} \
+                    --region ${GCP_REGION} \
                     --platform managed \
                     --allow-unauthenticated \
                     --set-env-vars="ENVIRONMENT_NAME=${env.ENVIRONMENT_NAME}"
@@ -54,12 +61,9 @@ pipeline {
 
     post {
         always {
-
             script {
                 if (env.IMAGE_TAG) {
                     sh "docker rmi ${env.IMAGE_TAG} || true"
-                } else {
-                    echo "IMAGE_TAG no estaba definida, saltando limpieza de Docker."
                 }
             }
         }

@@ -8,7 +8,7 @@ on:
 env:
   GCP_PROJECT_ID: "utec-posgrado-01"
   GCP_REGION: "us-central1"
-  ARTIFACT_REGISTRY_REPO: "app-gemini" 
+  ARTIFACT_REGISTRY_REPO: "app-gemini-lenon" 
 
 jobs:
   # 1. JOB DE CONSTRUCCIÓN Y DESPLIEGUE INICIAL / CANARY (10%)
